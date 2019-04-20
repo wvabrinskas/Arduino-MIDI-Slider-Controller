@@ -2,7 +2,7 @@
 /* send value when analog value changes*/
 #include "MIDIUSB.h"
  
-#define MIDI_CC_GENERAL1 0x0E
+#define MIDI_CC_GENERAL1 10
 #define MIDI_CC MIDI_CC_GENERAL1
 #define MIDI_CHANNEL 3
 
@@ -15,9 +15,9 @@ typedef struct {
   uint16_t value;
 } valueDictionary;
 
-valueDictionary oldAnalogValues[] = {0, 0, 0};
+valueDictionary oldAnalogValues[] = {};
 
-int pins[5] = {A0, A1, A2, A3, A4};
+int pins[5] = {A0, A1, A2, A3, A6};
 
 void setup() {
   for (int i = 0; i < sizeof(pins); i++) {
@@ -27,6 +27,7 @@ void setup() {
     oldAnalogValues[i].pin = pin;
     oldAnalogValues[i].value = analogValue;
   }
+  Serial.begin(9600);  
 }
  
 void loop() {
@@ -38,19 +39,16 @@ void loop() {
     uint8_t newAnalogValue = analogValue >> 3;
 
     if (newAnalogValue != oldAnalogValue) {   
-        byte channel = MIDI_CHANNEL;
-        channel += 0xB0 - 1;
-        if (channel >= 0xB0 && channel <= 0xBF) {
-          midiEventPacket_t midiCc = {MIDI_CHANNEL, MIDI_CC + i, 0, newAnalogValue};
-          MidiUSB.sendMIDI(midiCc);
-          MidiUSB.flush();
-          oldAnalogValue = newAnalogValue;
-          
-          Serial.print(i);
-          Serial.print(": ");
-          Serial.println(newAnalogValue);
+        midiEventPacket_t midiCc = {0x0B, 0xB0 | 0, i + 14, newAnalogValue};
+        MidiUSB.sendMIDI(midiCc);
+        MidiUSB.flush();
+        oldAnalogValue = newAnalogValue;
+        
+        Serial.print(i);
+        Serial.print(": ");
+        Serial.println(newAnalogValue);
 
-        }
+  
     }
   }
 }
