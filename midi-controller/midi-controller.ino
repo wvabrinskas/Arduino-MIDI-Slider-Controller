@@ -52,7 +52,7 @@ void loop() {
     uint8_t oldAnalogValue = getValue(pin);
 
     if (newAnalogValue != oldAnalogValue) {   
-        midiEventPacket_t midiCc = {0x0B, 0xB0 | 0, i, newAnalogValue};
+        midiEventPacket_t midiCc = {0x0B, 0xB0 | 0, i + 0x1A, newAnalogValue};
         MidiUSB.sendMIDI(midiCc);
         MidiUSB.flush();
         
