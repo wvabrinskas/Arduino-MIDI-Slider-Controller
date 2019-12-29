@@ -27,7 +27,7 @@ SliderStore oldAnalogValues[NUM_OF_SLIDERS] = {};
 ButtonStore oldDigitalValues[NUM_OF_BUTTONS] = {};
 
 int sliders[NUM_OF_SLIDERS] = {A0, A1, A2, A3, A6};
-int buttons[NUM_OF_BUTTONS] = {3, 4};
+int buttons[NUM_OF_BUTTONS] = {5, 7};
 
 void setup() {
   for (int i = 0; i < NUM_OF_SLIDERS; i++) {
