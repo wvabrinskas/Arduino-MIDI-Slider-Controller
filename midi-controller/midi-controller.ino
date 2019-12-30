@@ -49,6 +49,9 @@ void setup() {
     int digitalValue = digitalRead(button);
     ButtonStore oldValues = {button , digitalValue, ledPin};
     oldDigitalValues[i] = oldValues;
+
+    //write LED
+    digitalWrite(ledPin, digitalValue);
   }
 
   Serial.begin(9600);  
