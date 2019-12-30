@@ -54,26 +54,6 @@ void setup() {
   Serial.begin(9600);  
 }
 
-uint8_t getValue(int pin) {
-  for (int i = 0; i <= NUM_OF_SLIDERS; i++) {
-    SliderStore oldValues = oldAnalogValues[i];
-    if (oldValues.pin == pin) {
-      return oldValues.value;
-    }
-  }
-  return NULL;
-}
-
-int getButtonValue(int pin) {
-  for (int i = 0; i <= NUM_OF_BUTTONS; i++) {
-    ButtonStore oldValues = oldDigitalValues[i];
-    if (oldValues.pin == pin) {
-      return oldValues.value;
-    }
-  }
-  return NULL;
-}
-
 void sendMidi(midiEventPacket_t midiCc) {
   MidiUSB.sendMIDI(midiCc);
   MidiUSB.flush();
@@ -83,11 +63,13 @@ void loop() {
 
   //probably should find a better way than a loop.
   for (int i = 0; i < NUM_OF_SLIDERS; i++) { 
+    SliderStore slider = oldAnalogValues[i];
 
-    int pin = sliders[i];
+    uint8_t oldAnalogValue = slider.value;
+    int pin = slider.pin;
+
     uint16_t analogValue = analogRead(pin);
     uint8_t newAnalogValue = analogValue >> 3;
-    uint8_t oldAnalogValue = getValue(pin);
 
     if (newAnalogValue != oldAnalogValue) {   
         midiEventPacket_t midiCc = {0x0B, 0xB0 | 0, i + 0x1A, newAnalogValue};
@@ -103,20 +85,23 @@ void loop() {
   }
 
   for (int i = 0; i < NUM_OF_BUTTONS; i++) {
-    int button = buttons[i];
+
+    ButtonStore oldButtonStore = oldDigitalValues[i];
+
+    int oldValue = oldButtonStore.value;
+    int button = oldButtonStore.pin;
+
     int rawPinRead = digitalRead(button);
     int newValue = rawPinRead >> 3;
-    int oldValue = getButtonValue(button);
     
-
     if (newValue != oldValue) {
-      ButtonStore oldButtonStore = oldDigitalValues[i];
-     
+      int ledPint = oldButtonStore.ledPin;
+
       midiEventPacket_t midiCc = {0x0B, 0xB0 | 0, i + 0x44, newValue};
       sendMidi(midiCc);
 
-      digitalWrite(oldButtonStore.ledPin, rawPinRead);
-      oldDigitalValues[i] = { button, newValue, oldButtonStore.ledPin};
+      digitalWrite(ledPint, rawPinRead);
+      oldDigitalValues[i] = { button, newValue, ledPint};
 
       Serial.print(i);
       Serial.print(" button: ");
