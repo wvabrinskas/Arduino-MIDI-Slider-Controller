@@ -15,8 +15,6 @@ A project to hook up slider pots to an Arduino to use as a MIDI controller
 # MIDI Control Table
 - http://www.onicos.com/staff/iz/formats/midi-cntl.html
 
-<TITLE>MIDI Control Table</TITLE>
-<H1>MIDI Control Table</H1>
 <TABLE BORDER>
 <TR><TH>2nd byte<TH>Function<TH>3rd byte
 <TR ALIGN=CENTER><TD>0x00<TD>Continuous controller #0<TD>0-127, MSB
