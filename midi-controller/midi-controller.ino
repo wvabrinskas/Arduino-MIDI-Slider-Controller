@@ -19,6 +19,11 @@ typedef struct {
   int ledPin;
 } ButtonStore;
 
+enum ControlType {
+  Slider, 
+  Button
+};
+
 //array of type SliderStore with NUM_OF_SLIDERS count
 SliderStore oldAnalogValues[NUM_OF_SLIDERS] = {};
 ButtonStore oldDigitalValues[NUM_OF_BUTTONS] = {};
@@ -46,7 +51,7 @@ void setup() {
     ButtonStore oldValues = {button , digitalValue, ledPin};
     oldDigitalValues[i] = oldValues;
 
-    //write LED
+    //write button state to LED pin
     digitalWrite(ledPin, digitalValue);
   }
 
@@ -64,11 +69,11 @@ void loop() {
   for (int i = 0; i < NUM_OF_SLIDERS; i++) {
     SliderStore slider = oldAnalogValues[i];
 
-    uint8_t oldAnalogValue = slider.value;
+    int oldAnalogValue = slider.value;
     int pin = slider.pin;
 
-    uint16_t analogValue = analogRead(pin);
-    uint8_t newAnalogValue = analogValue >> 3;
+    int analogValue = analogRead(pin);
+    int newAnalogValue = analogValue >> 3;
 
     if (newAnalogValue != oldAnalogValue) {
       midiEventPacket_t midiCc = {0x0B, 0xB0 | 0, i + 0x1A, newAnalogValue};
