@@ -48,13 +48,12 @@ void setup() {
     pinMode(ledPin, OUTPUT);
 
     int digitalValue = digitalRead(button);
+ 
     ButtonStore oldValues = {button , digitalValue, ledPin};
     oldDigitalValues[i] = oldValues;
 
     //write button state to LED pin
-    digitalWrite(ledPin, digitalValue);
   }
-
   Serial.begin(9600);
 }
 
@@ -94,18 +93,18 @@ void loop() {
 
     int oldValue = oldButtonStore.value;
     int button = oldButtonStore.pin;
+    int ledPin = oldButtonStore.ledPin;
 
     int rawPinRead = digitalRead(button);
-    int newValue = rawPinRead >> 3;
 
-    if (newValue != oldValue) {
-      int ledPint = oldButtonStore.ledPin;
-
+    if (rawPinRead != oldValue) {
+      int newValue = rawPinRead == HIGH ? 125 : 0;
+      
       midiEventPacket_t midiCc = {0x0B, 0xB0 | 0, i + 0x44, newValue};
       sendMidi(midiCc);
 
-      digitalWrite(ledPint, rawPinRead);
-      oldDigitalValues[i] = { button, newValue, ledPint};
+      digitalWrite(ledPin, rawPinRead);
+      oldDigitalValues[i] = { button, rawPinRead, ledPin};
 
       Serial.print(i);
       Serial.print(" button: ");
