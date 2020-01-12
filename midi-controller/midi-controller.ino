@@ -1,4 +1,4 @@
-
+#include <Bounce2.h>
 /* send value when analog value changes*/
 #include "MIDIUSB.h"
 
@@ -8,19 +8,21 @@
 #define NUM_OF_SLIDERS 5
 #define NUM_OF_BUTTONS 2
 
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long debounceDelay = 50;
 typedef struct {
   int pin;
   uint16_t value;
 } SliderStore;
 
 typedef struct {
-   int value;
-   int midi;
-   int pin;
+  int value;
+  int midi;
+  int pin;
 } LEDState;
 
 enum ControlType {
-  Slider, 
+  Slider,
   Button
 };
 
@@ -31,7 +33,7 @@ LEDState ledStates[NUM_OF_BUTTONS] = {};
 int sliders[NUM_OF_SLIDERS] = {A0, A1, A2, A3, A6};
 int buttons[NUM_OF_BUTTONS] = {5, 7};
 int leds[NUM_OF_BUTTONS] = {6, 8};
-
+Bounce bouncers[NUM_OF_BUTTONS] = {};
 void setup() {
   for (int i = 0; i < NUM_OF_SLIDERS; i++) {
     int pin = sliders[i];
@@ -52,6 +54,11 @@ void setup() {
 
     LEDState led = {LOW, midi, ledPin};
     ledStates[i] = led;
+    
+    Bounce  bouncer  = Bounce(); 
+    bouncer.attach(button);
+    bouncer.interval(25);
+    bouncers[i] = bouncer;
   }
 
   Serial.begin(9600);
@@ -63,6 +70,11 @@ void sendMidi(midiEventPacket_t midiCc) {
 }
 
 void loop() {
+
+  for (int i = 0; i < sizeof(bouncers); i++) {
+    bouncers[i].update();
+  }
+
   midiEventPacket_t rx;
   do {
     rx = MidiUSB.read();
@@ -72,18 +84,18 @@ void loop() {
 
       for (int i = 0; i < NUM_OF_BUTTONS; i++) {
         LEDState ledState = ledStates[i];
-        
+
         if (address == ledState.midi) {
-            Serial.print("GOT MIDI: ");
-            Serial.print(value);
-            Serial.print("\n");
+          Serial.print("GOT MIDI: ");
+          Serial.print(value);
+          Serial.print("\n");
 
-            int oldValue = ledState.value;
-            int newValue = value == 127 ? HIGH : LOW;
-            int pin = ledState.pin;
+          int oldValue = ledState.value;
+          int newValue = value == 127 ? HIGH : LOW;
+          int pin = ledState.pin;
 
-            ledStates[i] = { newValue, ledState.midi, pin};
-            digitalWrite(pin, newValue);
+          ledStates[i] = { newValue, ledState.midi, pin};
+          digitalWrite(pin, newValue);
         }
       }
     }
@@ -112,19 +124,20 @@ void loop() {
   }
 
   for (int i = 0; i < NUM_OF_BUTTONS; i++) {
+    Bounce bouncer = bouncers[i];
     int button = buttons[i];
     int rawDigitalRead = digitalRead(button);
     
-    if (rawDigitalRead == HIGH) {
+    if (bouncer.rose()) {
 
       LEDState ledState = ledStates[i];
 
-       //inverse the state of the LED if button pressed
+      //inverse the state of the LED if button pressed
       int state = ledState.value == HIGH ? LOW : HIGH;
 
       //map midi value to send off
       int newValue = state == HIGH ? 127 : 0;
-      
+
       midiEventPacket_t midiCc = {0x0B, 0xB0 | 0, ledState.midi, newValue};
       sendMidi(midiCc);
 
@@ -136,7 +149,5 @@ void loop() {
       Serial.println(newValue);
     }
   }
-  
-
 
 }
