@@ -14,10 +14,10 @@ typedef struct {
 } SliderStore;
 
 typedef struct {
-  int pin;
-  int value;
-  int ledPin;
-} ButtonStore;
+   int value;
+   int midi;
+   int pin;
+} LEDState;
 
 enum ControlType {
   Slider, 
@@ -26,7 +26,7 @@ enum ControlType {
 
 //array of type SliderStore with NUM_OF_SLIDERS count
 SliderStore oldAnalogValues[NUM_OF_SLIDERS] = {};
-ButtonStore oldDigitalValues[NUM_OF_BUTTONS] = {};
+LEDState ledStates[NUM_OF_BUTTONS] = {};
 
 int sliders[NUM_OF_SLIDERS] = {A0, A1, A2, A3, A6};
 int buttons[NUM_OF_BUTTONS] = {5, 7};
@@ -44,16 +44,16 @@ void setup() {
   for (int i = 0; i < NUM_OF_BUTTONS; i++) {
     int button = buttons[i];
     int ledPin = leds[i];
+
     pinMode(button, INPUT);
     pinMode(ledPin, OUTPUT);
 
-    int digitalValue = digitalRead(button);
- 
-    ButtonStore oldValues = {button , digitalValue, ledPin};
-    oldDigitalValues[i] = oldValues;
+    int midi = i + 0x44;
 
-    //write button state to LED pin
+    LEDState led = {LOW, midi, ledPin};
+    ledStates[i] = led;
   }
+
   Serial.begin(9600);
 }
 
@@ -63,6 +63,31 @@ void sendMidi(midiEventPacket_t midiCc) {
 }
 
 void loop() {
+  midiEventPacket_t rx;
+  do {
+    rx = MidiUSB.read();
+    if (rx.header != 0) {
+      unsigned long address = rx.byte2;
+      int value = rx.byte3;
+
+      for (int i = 0; i < NUM_OF_BUTTONS; i++) {
+        LEDState ledState = ledStates[i];
+        
+        if (address == ledState.midi) {
+            Serial.print("GOT MIDI: ");
+            Serial.print(value);
+            Serial.print("\n");
+
+            int oldValue = ledState.value;
+            int newValue = value == 127 ? HIGH : LOW;
+            int pin = ledState.pin;
+
+            ledStates[i] = { newValue, ledState.midi, pin};
+            digitalWrite(pin, newValue);
+        }
+      }
+    }
+  } while (rx.header != 0);
 
   //probably should find a better way than a loop.
   for (int i = 0; i < NUM_OF_SLIDERS; i++) {
@@ -83,33 +108,35 @@ void loop() {
       Serial.print(i);
       Serial.print(" slider: ");
       Serial.println(newAnalogValue);
-
     }
   }
 
   for (int i = 0; i < NUM_OF_BUTTONS; i++) {
+    int button = buttons[i];
+    int rawDigitalRead = digitalRead(button);
+    
+    if (rawDigitalRead == HIGH) {
 
-    ButtonStore oldButtonStore = oldDigitalValues[i];
+      LEDState ledState = ledStates[i];
 
-    int oldValue = oldButtonStore.value;
-    int button = oldButtonStore.pin;
-    int ledPin = oldButtonStore.ledPin;
+       //inverse the state of the LED if button pressed
+      int state = ledState.value == HIGH ? LOW : HIGH;
 
-    int rawPinRead = digitalRead(button);
-
-    if (rawPinRead != oldValue) {
-      int newValue = rawPinRead == HIGH ? 125 : 0;
+      //map midi value to send off
+      int newValue = state == HIGH ? 127 : 0;
       
-      midiEventPacket_t midiCc = {0x0B, 0xB0 | 0, i + 0x44, newValue};
+      midiEventPacket_t midiCc = {0x0B, 0xB0 | 0, ledState.midi, newValue};
       sendMidi(midiCc);
 
-      digitalWrite(ledPin, rawPinRead);
-      oldDigitalValues[i] = { button, rawPinRead, ledPin};
+      ledStates[i] = { state, ledState.midi, ledState.pin};
+      digitalWrite(ledState.pin, state);
 
       Serial.print(i);
       Serial.print(" button: ");
       Serial.println(newValue);
     }
   }
+  
+
 
 }
