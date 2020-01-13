@@ -71,7 +71,7 @@ void sendMidi(midiEventPacket_t midiCc) {
 
 void loop() {
 
-  for (int i = 0; i < sizeof(bouncers); i++) {
+  for (int i = 0; i < NUM_OF_BUTTONS; i++) {
     bouncers[i].update();
   }
 
@@ -135,10 +135,7 @@ void loop() {
       //inverse the state of the LED if button pressed
       int state = ledState.value == HIGH ? LOW : HIGH;
 
-      //map midi value to send off
-      int newValue = state == HIGH ? 127 : 0;
-
-      midiEventPacket_t midiCc = {0x0B, 0xB0 | 0, ledState.midi, newValue};
+      midiEventPacket_t midiCc = {0x0B, 0xB0 | 0, ledState.midi, 127};
       sendMidi(midiCc);
 
       ledStates[i] = { state, ledState.midi, ledState.pin};
@@ -146,7 +143,7 @@ void loop() {
 
       Serial.print(i);
       Serial.print(" button: ");
-      Serial.println(newValue);
+      Serial.println("sending toggle");
     }
   }
 
