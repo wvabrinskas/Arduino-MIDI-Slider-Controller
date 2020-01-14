@@ -6,7 +6,7 @@ A project to hook up slider pots to an Arduino to use as a MIDI controller
 - https://raw.githubusercontent.com/sparkfun/Arduino_Boards/master/IDE_Board_Manager/package_sparkfun_index.json
 
 # Current Pinout 
-- Sliders (Analog): A0, A1, A2, A3, A6
+- Sliders (Analog): A0, A1, A2, A3, A9
 - Buttons (Digital): 5, 7
 - LEDs (Digital): 6, 8
 
