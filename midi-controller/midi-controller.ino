@@ -30,7 +30,7 @@ enum ControlType {
 SliderStore oldAnalogValues[NUM_OF_SLIDERS] = {};
 LEDState ledStates[NUM_OF_BUTTONS] = {};
 
-int sliders[NUM_OF_SLIDERS] = {A0, A1, A2, A3, A6};
+int sliders[NUM_OF_SLIDERS] = {A0, A1, A2, A3, A9};
 int buttons[NUM_OF_BUTTONS] = {5, 7};
 int leds[NUM_OF_BUTTONS] = {6, 8};
 Bounce bouncers[NUM_OF_BUTTONS] = {};
